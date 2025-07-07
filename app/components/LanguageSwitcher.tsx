@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import ReactCountryFlag from "react-country-flag"
+import { availableLangsForPage } from "../availableLangs"
+
 
 const languages = [
   { code: "en", name: "English", flag: "US" },
@@ -18,11 +20,27 @@ function getCurrentLang(pathname: string) {
 }
 
 function getLangPath(lang: string, pathname: string) {
+  // 取当前页面的主路径（如 /privacy-policy）
   const segs = pathname.split("/").filter(Boolean)
-  const currentLang = getCurrentLang(pathname)
-  if (currentLang !== "en" && segs[0] === currentLang) segs.shift()
-  if (segs.length === 0) return lang === "en" ? "/" : `/${lang}`
-  return lang === "en" ? `/${segs.join("/")}` : `/${lang}/${segs.join("/")}`
+  let pageKey = "/";
+  if (segs.length > 0) {
+    // 如果是多语言首页
+    if (languages.some(l => l.code === segs[0])) {
+      pageKey = segs.length === 1 ? "/" : `/${segs.slice(1).join("/")}`;
+    } else {
+      pageKey = `/${segs.join("/")}`;
+    }
+  }
+  // 判断目标语言是否有该页面
+  const availableLangs = availableLangsForPage[pageKey] || ["en"];
+  if (lang === "en") {
+    return pageKey;
+  }
+  if (availableLangs.includes(lang)) {
+    return lang === "en" ? pageKey : `/${lang}${pageKey === "/" ? "" : pageKey}`;
+  }
+  // 目标语言没有该页面，跳到该语言首页
+  return `/${lang}`;
 }
 
 export function LanguageSwitcher() {
